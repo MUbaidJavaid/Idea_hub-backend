@@ -44,12 +44,19 @@ function requireDb(_req: Request, res: Response, next: NextFunction): void {
   next();
 }
 
+/** Multer's types can disagree with Express when nested @types/express-serve-static-core exists (e.g. Yarn on Render). */
+type MulterSingleHandler = (
+  req: Request,
+  res: Response,
+  cb: (err?: unknown) => void
+) => void;
+
 function parseSingleFile(
   req: Request,
   res: Response,
   next: NextFunction
 ): void {
-  upload.single('file')(req, res, (err: unknown) => {
+  (upload.single('file') as MulterSingleHandler)(req, res, (err: unknown) => {
     if (err) {
       const message =
         err instanceof multer.MulterError

@@ -53,7 +53,8 @@ export function createApp() {
     if (process.env.NODE_ENV === 'production') {
         app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS) || 1);
     }
-    app.use(compression({
+    /** Cast avoids duplicate @types/express-serve-static-core (e.g. under @types/compression) breaking app.use overloads on CI. */
+    const compressMiddleware = compression({
         level: 6,
         threshold: 2048,
         filter: (req, res) => {
@@ -61,7 +62,8 @@ export function createApp() {
                 return false;
             return compression.filter(req, res);
         },
-    }));
+    });
+    app.use(compressMiddleware);
     app.use(helmet({
         crossOriginResourcePolicy: { policy: 'cross-origin' },
     }));

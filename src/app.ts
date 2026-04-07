@@ -1,6 +1,6 @@
 import compression from 'compression';
 import cors, { type CorsOptions } from 'cors';
-import express, { type Express } from 'express';
+import express, { type Express, type Request, type RequestHandler, type Response } from 'express';
 import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
 import mongoose from 'mongoose';
@@ -58,16 +58,16 @@ export function createApp(): Express {
     app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS) || 1);
   }
 
-  app.use(
-    compression({
-      level: 6,
-      threshold: 2048,
-      filter: (req, res) => {
-        if (req.headers['x-no-compression']) return false;
-        return compression.filter(req, res);
-      },
-    })
-  );
+  /** Cast avoids duplicate @types/express-serve-static-core (e.g. under @types/compression) breaking app.use overloads on CI. */
+  const compressMiddleware: RequestHandler = compression({
+    level: 6,
+    threshold: 2048,
+    filter: (req: Request, res: Response) => {
+      if (req.headers['x-no-compression']) return false;
+      return compression.filter(req, res);
+    },
+  }) as RequestHandler;
+  app.use(compressMiddleware);
 
   app.use(
     helmet({
