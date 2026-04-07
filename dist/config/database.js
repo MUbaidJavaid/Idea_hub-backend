@@ -20,12 +20,26 @@ export async function connectDatabase() {
     mongoose.connection.on('error', (err) => logger.error({ err, service: 'mongodb' }, 'MongoDB error'));
     mongoose.connection.on('disconnected', () => logger.warn({ service: 'mongodb' }, 'MongoDB disconnected'));
     const maxPoolSize = Math.min(50, Math.max(5, Number(process.env.MONGODB_MAX_POOL_SIZE) || 15));
-    await mongoose.connect(uri, {
-        maxPoolSize,
-        minPoolSize: Math.min(2, maxPoolSize),
-        serverSelectionTimeoutMS: 5000,
-        socketTimeoutMS: 45_000,
-    });
+    try {
+        await mongoose.connect(uri, {
+            maxPoolSize,
+            minPoolSize: Math.min(2, maxPoolSize),
+            serverSelectionTimeoutMS: 10_000,
+            socketTimeoutMS: 45_000,
+        });
+    }
+    catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        const code = err && typeof err === 'object' && 'code' in err
+            ? Number(err.code)
+            : undefined;
+        if (code === 8000 ||
+            /bad auth|Authentication failed/i.test(msg)) {
+            logger.fatal({ err }, 'MongoDB authentication failed. In Atlas: Database Access → reset the user password → Connect → Drivers → copy URI. ' +
+                'If the password has @ : / ? # [ ] characters, URL-encode them in MONGODB_URI (e.g. @ → %40).');
+        }
+        throw err;
+    }
     logger.info({
         service: 'mongodb',
         database: mongoose.connection.name,
