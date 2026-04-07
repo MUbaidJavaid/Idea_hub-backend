@@ -1,0 +1,1 @@
+{"version":3,"file":"DocumentScanner.d.ts","sourceRoot":"","sources":["../../../src/services/scanners/DocumentScanner.ts"],"names":[],"mappings":"AAOA,OAAO,KAAK,EAAE,eAAe,EAAE,MAAM,YAAY,CAAC;AA8BlD,qBAAa,eAAe;IAC1B,OAAO,CAAC,QAAQ,CAAC,WAAW,CAAqB;IAE3C,IAAI,CAAC,WAAW,EAAE,MAAM,EAAE,QAAQ,EAAE,MAAM,GAAG,OAAO,CAAC,eAAe,CAAC;CA0I5E"}

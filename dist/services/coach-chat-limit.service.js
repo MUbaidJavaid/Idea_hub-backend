@@ -1,0 +1,110 @@
+import { coachFreeDailyMessageLimit, } from '../config/ai-coach.config.js';
+import { hasPaidProOrInvestor } from '../lib/subscription.js';
+const memCounts = new Map();
+export function utcDayString(d = new Date()) {
+    return d.toISOString().slice(0, 10);
+}
+function secondsUntilUtcMidnight(from = new Date()) {
+    const t = Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate() + 1, 0, 0, 0, 0);
+    return Math.max(1, Math.floor((t - from.getTime()) / 1000));
+}
+export function coachChatMemoryKey(userId, day = utcDayString()) {
+    return `${userId}:${day}`;
+}
+export async function getCoachMessagesUsedToday(userId) {
+    const day = utcDayString();
+    const key = coachChatMemoryKey(userId, day);
+    const url = process.env.REDIS_URL?.trim();
+    if (!url) {
+        return memCounts.get(key) ?? 0;
+    }
+    try {
+        const redis = (await import('../config/redis.js')).default;
+        const v = await redis.get(`coach:chat:${userId}:${day}`);
+        return v ? Number(v) || 0 : 0;
+    }
+    catch {
+        return memCounts.get(key) ?? 0;
+    }
+}
+export async function incrementCoachMessagesToday(userId) {
+    const day = utcDayString();
+    const key = coachChatMemoryKey(userId, day);
+    const url = process.env.REDIS_URL?.trim();
+    if (!url) {
+        const n = (memCounts.get(key) ?? 0) + 1;
+        memCounts.set(key, n);
+        return n;
+    }
+    try {
+        const redis = (await import('../config/redis.js')).default;
+        const redisKey = `coach:chat:${userId}:${day}`;
+        const n = await redis.incr(redisKey);
+        if (n === 1) {
+            await redis.expire(redisKey, secondsUntilUtcMidnight());
+        }
+        return n;
+    }
+    catch {
+        const n = (memCounts.get(key) ?? 0) + 1;
+        memCounts.set(key, n);
+        return n;
+    }
+}
+export async function assertCoachChatUnderLimit(params) {
+    if (coachUnlimitedRole(params.role)) {
+        return { ok: true, used: 0, limit: -1 };
+    }
+    if (hasPaidProOrInvestor({
+        role: params.role,
+        subscription: params.subscription,
+    })) {
+        return { ok: true, used: 0, limit: -1 };
+    }
+    const limit = coachFreeDailyMessageLimit();
+    const used = await getCoachMessagesUsedToday(params.userId);
+    if (used >= limit) {
+        return { ok: false, used, limit };
+    }
+    return { ok: true, used, limit };
+}
+export async function recordCoachMessageSent(userId, role, subscription) {
+    if (coachUnlimitedRole(role))
+        return;
+    if (hasPaidProOrInvestor({ role, subscription }))
+        return;
+    await incrementCoachMessagesToday(userId);
+}
+function coachUnlimitedRole(role) {
+    if (String(process.env.COACH_CHAT_UNLIMITED ?? '').toLowerCase() === 'true') {
+        return true;
+    }
+    return role === 'moderator' || role === 'super_admin';
+}
+/** Redis: brief dismissed for UTC day */
+export async function isCoachBriefDismissed(userId, day = utcDayString()) {
+    const url = process.env.REDIS_URL?.trim();
+    if (!url)
+        return false;
+    try {
+        const redis = (await import('../config/redis.js')).default;
+        const v = await redis.get(`coach:brief:dismiss:${userId}:${day}`);
+        return v === '1';
+    }
+    catch {
+        return false;
+    }
+}
+export async function dismissCoachBrief(userId, day = utcDayString()) {
+    const url = process.env.REDIS_URL?.trim();
+    if (!url)
+        return;
+    try {
+        const redis = (await import('../config/redis.js')).default;
+        await redis.set(`coach:brief:dismiss:${userId}:${day}`, '1', 'EX', 48 * 60 * 60);
+    }
+    catch {
+        /* ignore */
+    }
+}
+//# sourceMappingURL=coach-chat-limit.service.js.map

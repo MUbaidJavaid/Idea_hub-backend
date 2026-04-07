@@ -1,0 +1,1 @@
+{"version":3,"file":"serialize-user.d.ts","sourceRoot":"","sources":["../../src/lib/serialize-user.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,aAAa,EAAqB,MAAM,yBAAyB,CAAC;AA8BhF,uDAAuD;AACvD,wBAAgB,eAAe,CAAC,IAAI,EAAE,aAAa,GAAG,MAAM,CAAC,MAAM,EAAE,OAAO,CAAC,CAM5E;AAED,wBAAgB,SAAS,CAAC,IAAI,EAAE,aAAa,GAAG,MAAM,CAAC,MAAM,EAAE,OAAO,CAAC,CAwCtE"}

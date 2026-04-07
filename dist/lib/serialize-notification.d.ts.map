@@ -1,0 +1,1 @@
+{"version":3,"file":"serialize-notification.d.ts","sourceRoot":"","sources":["../../src/lib/serialize-notification.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,qBAAqB,EAAE,MAAM,iCAAiC,CAAC;AAC7E,OAAO,KAAK,EAAE,aAAa,EAAE,MAAM,yBAAyB,CAAC;AAG7D,wBAAgB,iBAAiB,CAC/B,CAAC,EAAE,qBAAqB,EACxB,MAAM,CAAC,EAAE,aAAa,GAAG,IAAI,GAC5B,MAAM,CAAC,MAAM,EAAE,OAAO,CAAC,CAmBzB"}

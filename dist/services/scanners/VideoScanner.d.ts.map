@@ -1,0 +1,1 @@
+{"version":3,"file":"VideoScanner.d.ts","sourceRoot":"","sources":["../../../src/services/scanners/VideoScanner.ts"],"names":[],"mappings":"AAWA,OAAO,KAAK,EAAE,eAAe,EAAE,MAAM,YAAY,CAAC;AAuDlD,qBAAa,YAAY;IACvB,OAAO,CAAC,QAAQ,CAAC,YAAY,CAAsB;IACnD,OAAO,CAAC,QAAQ,CAAC,WAAW,CAAqB;IAE3C,IAAI,CAAC,WAAW,EAAE,MAAM,EAAE,MAAM,EAAE,MAAM,GAAG,OAAO,CAAC,eAAe,CAAC;CAqH1E"}
