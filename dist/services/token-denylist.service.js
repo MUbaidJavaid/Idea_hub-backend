@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import redis from '../config/redis.js';
+import { getRedisClient } from '../config/redis.js';
 const PREFIX = 'jwt_refresh_deny:';
 const TTL_SEC = 60 * 60 * 24 * 8;
 function redisKey(token) {
@@ -8,6 +8,9 @@ function redisKey(token) {
 }
 export async function denyRefreshToken(token) {
     if (!process.env.REDIS_URL)
+        return;
+    const redis = getRedisClient();
+    if (!redis)
         return;
     try {
         await redis.set(redisKey(token), '1', 'EX', TTL_SEC);
@@ -18,6 +21,9 @@ export async function denyRefreshToken(token) {
 }
 export async function isRefreshTokenDenied(token) {
     if (!process.env.REDIS_URL)
+        return false;
+    const redis = getRedisClient();
+    if (!redis)
         return false;
     try {
         const v = await redis.get(redisKey(token));

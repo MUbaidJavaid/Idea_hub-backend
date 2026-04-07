@@ -1,6 +1,6 @@
 import { Worker } from 'bullmq';
 import mongoose from 'mongoose';
-import redis from '../config/redis.js';
+import { requireRedisClient } from '../config/redis.js';
 import { db } from '../config/firebase.js';
 import { Idea, Notification } from '../models/index.js';
 import { AggregateScanner } from '../services/scanners/AggregateScanner.js';
@@ -158,6 +158,7 @@ export async function processScanJob(job) {
     };
 }
 export function createScannerWorker() {
+    const redis = requireRedisClient();
     const worker = new Worker('content-scan', processScanJob, {
         connection: redis,
         concurrency: 3,

@@ -1,7 +1,7 @@
 import { Worker, type Job } from 'bullmq';
 import mongoose from 'mongoose';
 
-import redis from '../config/redis.js';
+import { requireRedisClient } from '../config/redis.js';
 import { db } from '../config/firebase.js';
 import { Idea, Notification } from '../models/index.js';
 import type { ScanJobPayload } from '../queues/scanner.queue.js';
@@ -202,6 +202,7 @@ export async function processScanJob(
 }
 
 export function createScannerWorker(): Worker<ScanJobPayload> {
+  const redis = requireRedisClient();
   const worker = new Worker<ScanJobPayload>(
     'content-scan',
     processScanJob,

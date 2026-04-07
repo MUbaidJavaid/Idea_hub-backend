@@ -15,9 +15,9 @@ import { nanoid } from 'nanoid';
 import type admin from 'firebase-admin';
 
 import { db } from './config/firebase.js';
-import redis from './config/redis.js';
+import { closeRedisConnection } from './config/redis.js';
 import { Idea, User } from './models/index.js';
-import { addScanJob, scanQueue } from './queues/scanner.queue.js';
+import { addScanJob, closeScanQueue } from './queues/scanner.queue.js';
 import { createScannerWorker } from './workers/scanner.worker.js';
 
 const TERMINAL_STATUSES = new Set([
@@ -133,9 +133,9 @@ async function main(): Promise<void> {
   );
 
   await worker.close();
-  await scanQueue.close();
+  await closeScanQueue();
   await mongoose.disconnect();
-  await redis.quit();
+  await closeRedisConnection();
 }
 
 main().catch((err) => {

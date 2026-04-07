@@ -429,7 +429,9 @@ async function getCachedBrief(
   const url = process.env.REDIS_URL?.trim();
   if (!url) return null;
   try {
-    const redis = (await import('../config/redis.js')).default;
+    const { getRedisClient } = await import('../config/redis.js');
+    const redis = getRedisClient();
+    if (!redis) return null;
     const raw = await redis.get(`coach:brief:json:${userId}:${day}`);
     if (!raw) return null;
     return JSON.parse(raw) as DailyBriefPayload;
@@ -446,7 +448,9 @@ async function setCachedBrief(
   const url = process.env.REDIS_URL?.trim();
   if (!url) return;
   try {
-    const redis = (await import('../config/redis.js')).default;
+    const { getRedisClient } = await import('../config/redis.js');
+    const redis = getRedisClient();
+    if (!redis) return;
     await redis.set(
       `coach:brief:json:${userId}:${day}`,
       JSON.stringify(payload),

@@ -19,7 +19,10 @@ export async function getCoachMessagesUsedToday(userId) {
         return memCounts.get(key) ?? 0;
     }
     try {
-        const redis = (await import('../config/redis.js')).default;
+        const { getRedisClient } = await import('../config/redis.js');
+        const redis = getRedisClient();
+        if (!redis)
+            return memCounts.get(key) ?? 0;
         const v = await redis.get(`coach:chat:${userId}:${day}`);
         return v ? Number(v) || 0 : 0;
     }
@@ -37,7 +40,13 @@ export async function incrementCoachMessagesToday(userId) {
         return n;
     }
     try {
-        const redis = (await import('../config/redis.js')).default;
+        const { getRedisClient } = await import('../config/redis.js');
+        const redis = getRedisClient();
+        if (!redis) {
+            const n = (memCounts.get(key) ?? 0) + 1;
+            memCounts.set(key, n);
+            return n;
+        }
         const redisKey = `coach:chat:${userId}:${day}`;
         const n = await redis.incr(redisKey);
         if (n === 1) {
@@ -87,7 +96,10 @@ export async function isCoachBriefDismissed(userId, day = utcDayString()) {
     if (!url)
         return false;
     try {
-        const redis = (await import('../config/redis.js')).default;
+        const { getRedisClient } = await import('../config/redis.js');
+        const redis = getRedisClient();
+        if (!redis)
+            return false;
         const v = await redis.get(`coach:brief:dismiss:${userId}:${day}`);
         return v === '1';
     }
@@ -100,7 +112,10 @@ export async function dismissCoachBrief(userId, day = utcDayString()) {
     if (!url)
         return;
     try {
-        const redis = (await import('../config/redis.js')).default;
+        const { getRedisClient } = await import('../config/redis.js');
+        const redis = getRedisClient();
+        if (!redis)
+            return;
         await redis.set(`coach:brief:dismiss:${userId}:${day}`, '1', 'EX', 48 * 60 * 60);
     }
     catch {

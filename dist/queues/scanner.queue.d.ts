@@ -1,4 +1,3 @@
-import { Queue } from 'bullmq';
 export interface ScanJobPayload {
     ideaId: string;
     mediaItems: Array<{
@@ -11,8 +10,8 @@ export interface ScanJobPayload {
         mimeType: string;
     }>;
 }
-export declare const scanQueue: Queue<ScanJobPayload, any, string, ScanJobPayload, any, string>;
 export declare function addScanJob(ideaId: string, mediaItems: ScanJobPayload['mediaItems'], options?: {
     priority?: number;
 }): Promise<void>;
+export declare function closeScanQueue(): Promise<void>;
 //# sourceMappingURL=scanner.queue.d.ts.map

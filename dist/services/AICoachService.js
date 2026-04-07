@@ -323,7 +323,10 @@ async function getCachedBrief(userId, day) {
     if (!url)
         return null;
     try {
-        const redis = (await import('../config/redis.js')).default;
+        const { getRedisClient } = await import('../config/redis.js');
+        const redis = getRedisClient();
+        if (!redis)
+            return null;
         const raw = await redis.get(`coach:brief:json:${userId}:${day}`);
         if (!raw)
             return null;
@@ -338,7 +341,10 @@ async function setCachedBrief(userId, day, payload) {
     if (!url)
         return;
     try {
-        const redis = (await import('../config/redis.js')).default;
+        const { getRedisClient } = await import('../config/redis.js');
+        const redis = getRedisClient();
+        if (!redis)
+            return;
         await redis.set(`coach:brief:json:${userId}:${day}`, JSON.stringify(payload), 'EX', 36 * 60 * 60);
     }
     catch {

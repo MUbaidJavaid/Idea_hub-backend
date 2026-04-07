@@ -1,20 +1,41 @@
 import { Queue } from 'bullmq';
-import redis from '../config/redis.js';
-export const scanQueue = new Queue('content-scan', {
-    connection: redis,
-    defaultJobOptions: {
-        attempts: 3,
-        backoff: { type: 'exponential', delay: 2000 },
-        removeOnComplete: { count: 100 },
-        removeOnFail: { count: 200 },
-    },
-});
+import { getRedisClient } from '../config/redis.js';
+import { logger } from '../lib/logger.js';
+let scanQueue = null;
+function ensureScanQueue() {
+    const redis = getRedisClient();
+    if (!redis)
+        return null;
+    if (!scanQueue) {
+        scanQueue = new Queue('content-scan', {
+            connection: redis,
+            defaultJobOptions: {
+                attempts: 3,
+                backoff: { type: 'exponential', delay: 2000 },
+                removeOnComplete: { count: 100 },
+                removeOnFail: { count: 200 },
+            },
+        });
+    }
+    return scanQueue;
+}
 export async function addScanJob(ideaId, mediaItems, options) {
-    await scanQueue.add('scan-idea', { ideaId, mediaItems }, {
+    const q = ensureScanQueue();
+    if (!q) {
+        logger.debug({ ideaId, mediaCount: mediaItems.length }, 'skip content-scan job: REDIS_URL not configured');
+        return;
+    }
+    await q.add('scan-idea', { ideaId, mediaItems }, {
         jobId: `scan-${ideaId}-${Date.now()}`,
         ...(typeof options?.priority === 'number'
             ? { priority: options.priority }
             : {}),
     });
+}
+export async function closeScanQueue() {
+    if (!scanQueue)
+        return;
+    await scanQueue.close();
+    scanQueue = null;
 }
 //# sourceMappingURL=scanner.queue.js.map
