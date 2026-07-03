@@ -107,6 +107,9 @@ export function registerPatchRoute(ideasRouter: Router): void {
         .filter(Boolean)
         .slice(0, 30);
     }
+    if (typeof body.location === 'string') {
+      idea.location = body.location.trim().slice(0, 200);
+    }
 
     try {
       if (contentChanged) {

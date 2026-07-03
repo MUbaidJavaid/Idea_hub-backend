@@ -199,3 +199,18 @@ export async function uploadToCloudinary(input: {
     mimeType: effectiveMime,
   };
 }
+
+export async function destroyFromCloudinary(
+  publicId: string,
+  mediaType: string
+): Promise<void> {
+  ensureConfigured();
+  let resourceType: 'image' | 'video' | 'raw' = 'raw';
+  if (mediaType === 'image') resourceType = 'image';
+  else if (mediaType === 'video') resourceType = 'video';
+
+  await cloudinary.uploader.destroy(publicId, {
+    resource_type: resourceType,
+    invalidate: true,
+  });
+}

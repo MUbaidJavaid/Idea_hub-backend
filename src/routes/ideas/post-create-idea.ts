@@ -55,6 +55,8 @@ export async function postCreateIdea(req: Request, res: Response): Promise<void>
       ? parentRaw.trim()
       : '';
   const isDuetResponse = Boolean(body.isDuetResponse);
+  const location =
+    typeof body.location === 'string' ? body.location.trim().slice(0, 200) : '';
 
   if (!title || !description) {
     res.status(400).json({
@@ -240,6 +242,7 @@ export async function postCreateIdea(req: Request, res: Response): Promise<void>
       collaboratorsOpen,
       requiredSkills: skillStrings,
       collaborators: [],
+      ...(location ? { location } : {}),
       ...(parentOid
         ? { parentIdeaId: parentOid, isDuetResponse: true }
         : {}),
@@ -325,6 +328,11 @@ export async function postCreateIdea(req: Request, res: Response): Promise<void>
       );
       scheduleIdeaCoachFeedback(String(fresh._id));
     }
+
+    const { scheduleIdeaMetadataRefresh } = await import(
+      '../../services/idea-metadata.service.js'
+    );
+    scheduleIdeaMetadataRefresh(String(fresh._id));
 
     const [createdPayload] = await mapIdeasForPublicApi([fresh], userId);
 
