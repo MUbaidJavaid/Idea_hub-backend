@@ -51,7 +51,11 @@ export async function connectDatabase(): Promise<void> {
   try {
     await mongoose.connect(uri, {
       maxPoolSize,
+<<<<<<< HEAD
       minPoolSize: onVercel ? 1 : Math.min(2, maxPoolSize),
+=======
+      minPoolSize: Math.min(2, maxPoolSize),
+>>>>>>> 0e670fbc074c1080c80bfe3d23718fecfdd65372
       serverSelectionTimeoutMS: 10_000,
       socketTimeoutMS: 45_000,
     });
