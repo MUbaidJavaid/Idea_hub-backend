@@ -71,9 +71,10 @@ export function createApp() {
         },
     });
     app.use(compressMiddleware);
-    app.use(helmet({
+    const securityHeaders = helmet({
         crossOriginResourcePolicy: { policy: 'cross-origin' },
-    }));
+    });
+    app.use(securityHeaders);
     app.use(cors(corsOptions));
     app.options('*', cors(corsOptions));
     app.use(healthRouter);

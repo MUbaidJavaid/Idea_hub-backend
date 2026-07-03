@@ -78,11 +78,12 @@ export function createApp(): Express {
   }) as RequestHandler;
   app.use(compressMiddleware);
 
-  app.use(
-    helmet({
-      crossOriginResourcePolicy: { policy: 'cross-origin' },
-    })
-  );
+  const securityHeaders: RequestHandler = (
+    helmet as unknown as (options?: Record<string, unknown>) => RequestHandler
+  )({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  });
+  app.use(securityHeaders);
 
   app.use(cors(corsOptions));
   app.options('*', cors(corsOptions));
