@@ -1,1 +1,1 @@
-{"version":3,"file":"register-likes.d.ts","sourceRoot":"","sources":["../../../src/routes/ideas/register-likes.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,MAAM,EAAE,MAAM,SAAS,CAAC;AAOtC,wBAAgB,kBAAkB,CAAC,WAAW,EAAE,MAAM,GAAG,IAAI,CAmF5D"}
+{"version":3,"file":"register-likes.d.ts","sourceRoot":"","sources":["../../../src/routes/ideas/register-likes.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,MAAM,EAAE,MAAM,SAAS,CAAC;AAWtC,wBAAgB,kBAAkB,CAAC,WAAW,EAAE,MAAM,GAAG,IAAI,CA4J5D"}

@@ -1,8 +1,67 @@
 import mongoose from 'mongoose';
 import { requireAuth } from '../../middleware/require-auth.js';
-import { Idea, Like } from '../../models/index.js';
+import { optionalAuth } from '../../middleware/optional-auth.js';
+import { Idea, Like, User } from '../../models/index.js';
+import { userToApi } from '../../lib/serialize-user.js';
 import { requireDb } from './guards.js';
+const LIKES_PAGE = 30;
 export function registerLikeRoutes(ideasRouter) {
+    ideasRouter.get('/:id/likes', requireDb, optionalAuth, async (req, res) => {
+        const { id: ideaId } = req.params;
+        if (!mongoose.Types.ObjectId.isValid(ideaId)) {
+            res.status(400).json({
+                success: false,
+                message: 'Invalid idea id',
+                data: null,
+            });
+            return;
+        }
+        const ideaExists = await Idea.exists({ _id: ideaId });
+        if (!ideaExists) {
+            res.status(404).json({
+                success: false,
+                message: 'Idea not found',
+                data: null,
+            });
+            return;
+        }
+        const cursor = typeof req.query.cursor === 'string' ? req.query.cursor.trim() : '';
+        const filter = {
+            ideaId: new mongoose.Types.ObjectId(ideaId),
+        };
+        if (cursor && mongoose.Types.ObjectId.isValid(cursor)) {
+            filter._id = { $lt: new mongoose.Types.ObjectId(cursor) };
+        }
+        const likes = await Like.find(filter)
+            .sort({ _id: -1 })
+            .limit(LIKES_PAGE + 1)
+            .select('userId createdAt')
+            .lean();
+        const hasMore = likes.length > LIKES_PAGE;
+        const page = hasMore ? likes.slice(0, LIKES_PAGE) : likes;
+        const userIds = [...new Set(page.map((l) => String(l.userId)))];
+        const users = await User.find({ _id: { $in: userIds } });
+        const userMap = new Map(users.map((u) => [String(u._id), userToApi(u)]));
+        const rows = page.map((l) => ({
+            userId: String(l.userId),
+            likedAt: l.createdAt instanceof Date
+                ? l.createdAt.toISOString()
+                : String(l.createdAt),
+            user: userMap.get(String(l.userId)) ?? null,
+        }));
+        const nextCursor = hasMore && page.length > 0
+            ? String(page[page.length - 1]._id)
+            : undefined;
+        res.json({
+            success: true,
+            message: 'OK',
+            data: rows,
+            meta: {
+                nextCursor,
+                hasMore: Boolean(nextCursor),
+            },
+        });
+    });
     ideasRouter.post('/:id/like', requireDb, requireAuth, async (req, res) => {
         const { id: ideaId } = req.params;
         const userId = res.locals.authUserId;

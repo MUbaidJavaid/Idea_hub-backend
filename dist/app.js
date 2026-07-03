@@ -3,7 +3,6 @@ import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
-import mongoose from 'mongoose';
 import { vercelReadyMiddleware } from './bootstrap-api.js';
 import { httpLogger } from './lib/logger.js';
 import { globalApiLimiter } from './middleware/api-rate-limit.js';
@@ -22,6 +21,7 @@ import { aiCoachRouter } from './routes/ai-coach.js';
 import { collectionsRouter } from './routes/collections.js';
 import { stripeWebhookRoute } from './routes/stripe-webhook.js';
 import { subscriptionsRouter } from './routes/subscriptions.js';
+import { healthRouter } from './routes/health.js';
 const defaultDevOrigins = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
@@ -76,6 +76,7 @@ export function createApp() {
     }));
     app.use(cors(corsOptions));
     app.options('*', cors(corsOptions));
+    app.use(healthRouter);
     app.use(httpLogger);
     app.post('/api/subscriptions/webhook', express.raw({ type: 'application/json' }), (req, res, next) => {
         void stripeWebhookRoute(req, res).catch(next);
@@ -85,12 +86,6 @@ export function createApp() {
     app.use(mongoSanitize({ replaceWith: '_' }));
     app.use(globalApiLimiter);
     app.use(requestTimeout(Number(process.env.REQUEST_TIMEOUT_MS) || 30_000));
-    app.get('/health', (_req, res) => {
-        res.json({
-            ok: true,
-            mongo: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-        });
-    });
     app.use('/api/auth', authRouter);
     app.use('/api/users', usersRouter);
     app.use('/api/ideas', ideasRouter);

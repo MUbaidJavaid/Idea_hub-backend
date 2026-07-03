@@ -39,6 +39,7 @@ export async function postCreateIdea(req, res) {
         ? parentRaw.trim()
         : '';
     const isDuetResponse = Boolean(body.isDuetResponse);
+    const location = typeof body.location === 'string' ? body.location.trim().slice(0, 200) : '';
     if (!title || !description) {
         res.status(400).json({
             success: false,
@@ -196,6 +197,7 @@ export async function postCreateIdea(req, res) {
             collaboratorsOpen,
             requiredSkills: skillStrings,
             collaborators: [],
+            ...(location ? { location } : {}),
             ...(parentOid
                 ? { parentIdeaId: parentOid, isDuetResponse: true }
                 : {}),
@@ -263,6 +265,8 @@ export async function postCreateIdea(req, res) {
             const { scheduleIdeaCoachFeedback } = await import('../../services/AICoachService.js');
             scheduleIdeaCoachFeedback(String(fresh._id));
         }
+        const { scheduleIdeaMetadataRefresh } = await import('../../services/idea-metadata.service.js');
+        scheduleIdeaMetadataRefresh(String(fresh._id));
         const [createdPayload] = await mapIdeasForPublicApi([fresh], userId);
         res.status(201).json({
             success: true,

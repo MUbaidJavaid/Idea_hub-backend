@@ -94,6 +94,9 @@ export function registerPatchRoute(ideasRouter) {
                 .filter(Boolean)
                 .slice(0, 30);
         }
+        if (typeof body.location === 'string') {
+            idea.location = body.location.trim().slice(0, 200);
+        }
         try {
             if (contentChanged) {
                 const nextV = (idea.version ?? 1) + 1;
@@ -148,6 +151,10 @@ export function registerPatchRoute(ideasRouter) {
             'true') {
             const { scheduleValidationRecalculate } = await import('../../services/ValidationEngine.js');
             scheduleValidationRecalculate(id);
+        }
+        if (contentChanged) {
+            const { scheduleIdeaMetadataRefresh } = await import('../../services/idea-metadata.service.js');
+            scheduleIdeaMetadataRefresh(id);
         }
         const fresh = await Idea.findById(id);
         if (!fresh) {

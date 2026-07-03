@@ -121,7 +121,8 @@ export function registerMediaRoutes(ideasRouter: Router): void {
           scanStatus: 'pending',
           scanViolations: [],
           metadata: {},
-        });
+          uploadedAt: new Date(),
+        } as unknown as (typeof idea.media)[number]);
         await idea.save();
 
         const wantsScan = Boolean(process.env.REDIS_URL);
@@ -210,8 +211,8 @@ export function registerMediaRoutes(ideasRouter: Router): void {
         return;
       }
 
-      const item = idea.media.id(mediaId);
-      if (!item) {
+      const idx = idea.media.findIndex((m) => String(m._id) === mediaId);
+      if (idx === -1) {
         res.status(404).json({
           success: false,
           message: 'Media not found',
@@ -219,7 +220,7 @@ export function registerMediaRoutes(ideasRouter: Router): void {
         });
         return;
       }
-
+      const item = idea.media[idx]!;
       const publicId = String(item.publicId ?? '').trim();
       if (publicId) {
         try {
@@ -228,8 +229,7 @@ export function registerMediaRoutes(ideasRouter: Router): void {
           console.warn('[ideas] cloudinary destroy', err);
         }
       }
-
-      item.deleteOne();
+      idea.media.splice(idx, 1);
       await idea.save();
 
       const fresh = await Idea.findById(id);

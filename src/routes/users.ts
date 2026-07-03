@@ -18,6 +18,7 @@ import {
   getUserCollaborationsList,
   getUserDashboardData,
 } from '../services/user-dashboard.service.js';
+import { mapIdeasForPublicApi } from './ideas/map-public.js';
 
 export const usersRouter = Router();
 
@@ -534,7 +535,7 @@ usersRouter.get('/me/saved-ideas', requireDb, requireAuth, async (req, res) => {
   res.json({
     success: true,
     message: 'OK',
-    data: ordered.map((i) => ideaToApi(i)),
+    data: await mapIdeasForPublicApi(ordered, userId),
     meta: {
       nextCursor,
       hasMore: Boolean(nextCursor),

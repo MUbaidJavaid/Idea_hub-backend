@@ -13,7 +13,9 @@ export const globalApiLimiter = rateLimit({
         data: null,
         errors: [],
     },
-    skip: (req) => req.path === '/health',
+    skip: (req) => req.path === '/' ||
+        req.path === '/health' ||
+        req.path.startsWith('/health/'),
 });
 export const strictWriteLimiter = rateLimit({
     windowMs,

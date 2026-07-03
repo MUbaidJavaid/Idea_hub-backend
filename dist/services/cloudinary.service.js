@@ -163,4 +163,16 @@ export async function uploadToCloudinary(input) {
         mimeType: effectiveMime,
     };
 }
+export async function destroyFromCloudinary(publicId, mediaType) {
+    ensureConfigured();
+    let resourceType = 'raw';
+    if (mediaType === 'image')
+        resourceType = 'image';
+    else if (mediaType === 'video')
+        resourceType = 'video';
+    await cloudinary.uploader.destroy(publicId, {
+        resource_type: resourceType,
+        invalidate: true,
+    });
+}
 //# sourceMappingURL=cloudinary.service.js.map

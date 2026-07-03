@@ -171,6 +171,13 @@ export function registerPatchRoute(ideasRouter: Router): void {
       scheduleValidationRecalculate(id);
     }
 
+    if (contentChanged) {
+      const { scheduleIdeaMetadataRefresh } = await import(
+        '../../services/idea-metadata.service.js'
+      );
+      scheduleIdeaMetadataRefresh(id);
+    }
+
     const fresh = await Idea.findById(id);
     if (!fresh) {
       res.status(500).json({

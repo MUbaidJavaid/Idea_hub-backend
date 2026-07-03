@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { createApp } from './app.js';
 import { ensureApiReady } from './bootstrap-api.js';
 import { logger } from './lib/logger.js';
+import { markRuntimeStarted } from './lib/runtime-state.js';
 const PORT = Number(process.env.PORT) || 10000;
 async function startBackgroundJobs() {
     await import('./jobs/ai-coach-daily.cron.js');
@@ -26,6 +27,7 @@ async function main() {
         process.exit(1);
     });
     server.on('listening', () => {
+        markRuntimeStarted('node-server', PORT);
         logger.info({ port: PORT, url: `http://localhost:${PORT}` }, 'HTTP server listening');
     });
 }

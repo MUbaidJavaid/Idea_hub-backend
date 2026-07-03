@@ -19,17 +19,13 @@ export async function connectDatabase() {
     mongoose.connection.on('connected', () => logger.info({ service: 'mongodb' }, 'MongoDB connected'));
     mongoose.connection.on('error', (err) => logger.error({ err, service: 'mongodb' }, 'MongoDB error'));
     mongoose.connection.on('disconnected', () => logger.warn({ service: 'mongodb' }, 'MongoDB disconnected'));
-<<<<<<< HEAD
     const onVercel = process.env.VERCEL === '1' || process.env.VERCEL === 'true';
-    const defaultPool = onVercel ? 5 : 15;
+    const defaultPool = onVercel ? 1 : 15;
     const maxPoolSize = Math.min(50, Math.max(1, Number(process.env.MONGODB_MAX_POOL_SIZE) || defaultPool));
-=======
-    const maxPoolSize = Math.min(50, Math.max(5, Number(process.env.MONGODB_MAX_POOL_SIZE) || 15));
->>>>>>> 0e670fbc074c1080c80bfe3d23718fecfdd65372
     try {
         await mongoose.connect(uri, {
             maxPoolSize,
-            minPoolSize: Math.min(2, maxPoolSize),
+            minPoolSize: onVercel ? 1 : Math.min(2, maxPoolSize),
             serverSelectionTimeoutMS: 10_000,
             socketTimeoutMS: 45_000,
         });

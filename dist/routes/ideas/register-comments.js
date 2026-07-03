@@ -200,5 +200,83 @@ export function registerCommentRoutes(ideasRouter) {
             });
         }
     });
+    ideasRouter.patch('/:id/comments/:commentId', requireDb, requireAuth, async (req, res) => {
+        const { id: ideaId, commentId } = req.params;
+        const userId = res.locals.authUserId;
+        if (!userId ||
+            !mongoose.Types.ObjectId.isValid(ideaId) ||
+            !mongoose.Types.ObjectId.isValid(commentId)) {
+            res.status(400).json({
+                success: false,
+                message: 'Invalid request',
+                data: null,
+            });
+            return;
+        }
+        const comment = await Comment.findById(commentId);
+        if (!comment ||
+            String(comment.ideaId) !== ideaId ||
+            String(comment.authorId) !== userId) {
+            res.status(404).json({
+                success: false,
+                message: 'Comment not found',
+                data: null,
+            });
+            return;
+        }
+        const body = req.body;
+        const content = typeof body.content === 'string' ? body.content.trim() : '';
+        if (!content) {
+            res.status(400).json({
+                success: false,
+                message: 'Comment content is required',
+                data: null,
+            });
+            return;
+        }
+        comment.content = content;
+        comment.isEdited = true;
+        comment.editedAt = new Date();
+        await comment.save();
+        const lean = comment.toObject();
+        const authors = await authorMapForIds([String(lean.authorId)]);
+        res.json({
+            success: true,
+            message: 'OK',
+            data: leanCommentToApi(lean, authors),
+        });
+    });
+    ideasRouter.delete('/:id/comments/:commentId', requireDb, requireAuth, async (req, res) => {
+        const { id: ideaId, commentId } = req.params;
+        const userId = res.locals.authUserId;
+        if (!userId ||
+            !mongoose.Types.ObjectId.isValid(ideaId) ||
+            !mongoose.Types.ObjectId.isValid(commentId)) {
+            res.status(400).json({
+                success: false,
+                message: 'Invalid request',
+                data: null,
+            });
+            return;
+        }
+        const comment = await Comment.findById(commentId);
+        if (!comment ||
+            String(comment.ideaId) !== ideaId ||
+            String(comment.authorId) !== userId) {
+            res.status(404).json({
+                success: false,
+                message: 'Comment not found',
+                data: null,
+            });
+            return;
+        }
+        await Comment.deleteOne({ _id: commentId });
+        await Idea.updateOne({ _id: ideaId, commentCount: { $gt: 0 } }, { $inc: { commentCount: -1 } });
+        res.json({
+            success: true,
+            message: 'Deleted',
+            data: null,
+        });
+    });
 }
 //# sourceMappingURL=register-comments.js.map

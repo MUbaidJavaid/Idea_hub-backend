@@ -122,8 +122,17 @@ export function ideaToApi(idea) {
             cdnUrl: m.cdnUrl ?? '',
             thumbnailUrl: m.thumbnailUrl ?? '',
             mimeType: m.mimeType ?? '',
+            fileSizeBytes: typeof m.fileSizeBytes === 'number' ? m.fileSizeBytes : 0,
+            durationSeconds: typeof m.durationSeconds === 'number' ? m.durationSeconds : 0,
             scanStatus: m.scanStatus ?? 'pending',
             scanViolations: m.scanViolations ?? [],
+            ...(m.uploadedAt
+                ? {
+                    uploadedAt: m.uploadedAt instanceof Date
+                        ? m.uploadedAt.toISOString()
+                        : String(m.uploadedAt),
+                }
+                : {}),
         })),
         collaboratorsOpen: j.collaboratorsOpen ?? false,
         requiredSkills: j.requiredSkills ?? [],
@@ -136,10 +145,23 @@ export function ideaToApi(idea) {
         })),
         likeCount: j.likeCount ?? 0,
         viewCount: j.viewCount ?? 0,
+        shareCount: j.shareCount ?? 0,
         commentCount: j.commentCount ?? 0,
         trendingScore: j.trendingScore ?? 0,
         isFeatured: j.isFeatured ?? false,
+        ...(j.featuredAt
+            ? {
+                featuredAt: j.featuredAt instanceof Date
+                    ? j.featuredAt.toISOString()
+                    : String(j.featuredAt),
+            }
+            : {}),
         contentScanScore: j.contentScanScore ?? 0,
+        location: String(j.location ?? ''),
+        aiSummary: String(j.aiSummary ?? ''),
+        aiSuggestedTags: Array.isArray(j.aiSuggestedTags)
+            ? j.aiSuggestedTags
+            : [],
         ...(validationScore ? { validationScore } : {}),
         ...(j.rejectionReason
             ? { rejectionReason: j.rejectionReason }

@@ -192,6 +192,11 @@ export async function processScanJob(
     });
   }
 
+  const { scheduleIdeaMetadataRefresh } = await import(
+    '../services/idea-metadata.service.js'
+  );
+  scheduleIdeaMetadataRefresh(ideaId);
+
   await job.updateProgress(100);
 
   return {

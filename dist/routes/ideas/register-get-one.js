@@ -3,6 +3,22 @@ import { optionalAuth } from '../../middleware/optional-auth.js';
 import { Idea } from '../../models/index.js';
 import { mapIdeasForPublicApi } from './map-public.js';
 import { requireDb } from './guards.js';
+function canViewIdea(idea, viewerId) {
+    if (idea.status !== 'published' && idea.status !== 'flagged') {
+        if (!viewerId || String(idea.authorId) !== viewerId)
+            return false;
+    }
+    if (idea.visibility === 'public')
+        return true;
+    if (!viewerId)
+        return false;
+    if (String(idea.authorId) === viewerId)
+        return true;
+    if (idea.visibility === 'collaborators_only') {
+        return idea.collaborators.some((c) => String(c.userId) === viewerId);
+    }
+    return false;
+}
 export function registerGetOneRoute(ideasRouter) {
     ideasRouter.get('/:id', requireDb, optionalAuth, async (req, res) => {
         const { id } = req.params;
@@ -24,6 +40,19 @@ export function registerGetOneRoute(ideasRouter) {
             return;
         }
         const viewer = res.locals.authUserId;
+        if (!canViewIdea({
+            authorId: idea.authorId,
+            status: String(idea.status),
+            visibility: String(idea.visibility),
+            collaborators: (idea.collaborators ?? []),
+        }, viewer ?? null)) {
+            res.status(404).json({
+                success: false,
+                message: 'Idea not found',
+                data: null,
+            });
+            return;
+        }
         const [payload] = await mapIdeasForPublicApi([idea], viewer ?? null);
         res.json({
             success: true,

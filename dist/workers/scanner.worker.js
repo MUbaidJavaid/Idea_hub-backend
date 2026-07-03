@@ -150,6 +150,8 @@ export async function processScanJob(job) {
             updatedAt: Date.now(),
         });
     }
+    const { scheduleIdeaMetadataRefresh } = await import('../services/idea-metadata.service.js');
+    scheduleIdeaMetadataRefresh(ideaId);
     await job.updateProgress(100);
     return {
         ideaId,
