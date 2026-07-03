@@ -14,12 +14,14 @@ export async function connectDatabase() {
         return;
     }
     if (prod && looksLikeLocalMongo(uri)) {
-        throw new Error('MONGODB_URI points to localhost, which is not available on Render. Use MongoDB Atlas (mongodb+srv://...) and allow your Render outbound IPs or 0.0.0.0/0 in Atlas Network Access.');
+        throw new Error('MONGODB_URI points to localhost, which is not available on Vercel or Render. Use MongoDB Atlas (mongodb+srv://...) and allow 0.0.0.0/0 (or Vercel IPs) in Atlas Network Access.');
     }
     mongoose.connection.on('connected', () => logger.info({ service: 'mongodb' }, 'MongoDB connected'));
     mongoose.connection.on('error', (err) => logger.error({ err, service: 'mongodb' }, 'MongoDB error'));
     mongoose.connection.on('disconnected', () => logger.warn({ service: 'mongodb' }, 'MongoDB disconnected'));
-    const maxPoolSize = Math.min(50, Math.max(5, Number(process.env.MONGODB_MAX_POOL_SIZE) || 15));
+    const onVercel = process.env.VERCEL === '1' || process.env.VERCEL === 'true';
+    const defaultPool = onVercel ? 5 : 15;
+    const maxPoolSize = Math.min(50, Math.max(1, Number(process.env.MONGODB_MAX_POOL_SIZE) || defaultPool));
     try {
         await mongoose.connect(uri, {
             maxPoolSize,

@@ -1,7 +1,10 @@
 import cron from 'node-cron';
+import mongoose from 'mongoose';
 import { BehaviorEvent, Idea } from '../models/index.js';
 const TRENDING_XP_THRESHOLD = 50;
 cron.schedule('*/15 * * * *', async () => {
+    if (mongoose.connection.readyState !== 1)
+        return;
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const events = await BehaviorEvent.aggregate([
         {

@@ -1,4 +1,5 @@
 import cron from 'node-cron';
+import mongoose from 'mongoose';
 
 import { BehaviorEvent } from '../models/index.js';
 import {
@@ -9,6 +10,7 @@ import {
 type TagAggRow = { _id: string; score: number };
 
 async function refreshTrendingTags(): Promise<void> {
+  if (mongoose.connection.readyState !== 1) return;
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
   const rows = await BehaviorEvent.aggregate<TagAggRow>([

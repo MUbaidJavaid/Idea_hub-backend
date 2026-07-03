@@ -26,7 +26,7 @@ export async function connectDatabase(): Promise<void> {
 
   if (prod && looksLikeLocalMongo(uri)) {
     throw new Error(
-      'MONGODB_URI points to localhost, which is not available on Render. Use MongoDB Atlas (mongodb+srv://...) and allow your Render outbound IPs or 0.0.0.0/0 in Atlas Network Access.'
+      'MONGODB_URI points to localhost, which is not available on Vercel or Render. Use MongoDB Atlas (mongodb+srv://...) and allow 0.0.0.0/0 (or Vercel IPs) in Atlas Network Access.'
     );
   }
 
@@ -40,15 +40,18 @@ export async function connectDatabase(): Promise<void> {
     logger.warn({ service: 'mongodb' }, 'MongoDB disconnected')
   );
 
+  const onVercel =
+    process.env.VERCEL === '1' || process.env.VERCEL === 'true';
+  const defaultPool = onVercel ? 1 : 15;
   const maxPoolSize = Math.min(
     50,
-    Math.max(5, Number(process.env.MONGODB_MAX_POOL_SIZE) || 15)
+    Math.max(1, Number(process.env.MONGODB_MAX_POOL_SIZE) || defaultPool)
   );
 
   try {
     await mongoose.connect(uri, {
       maxPoolSize,
-      minPoolSize: Math.min(2, maxPoolSize),
+      minPoolSize: onVercel ? 1 : Math.min(2, maxPoolSize),
       serverSelectionTimeoutMS: 10_000,
       socketTimeoutMS: 45_000,
     });

@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
 import mongoose from 'mongoose';
 
+import { vercelReadyMiddleware } from './bootstrap-api.js';
 import { httpLogger } from './lib/logger.js';
 import { globalApiLimiter } from './middleware/api-rate-limit.js';
 import { errorHandler } from './middleware/error-handler.js';
@@ -49,10 +50,18 @@ const corsOptions: CorsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 };
 
+function isVercelRuntime(): boolean {
+  return process.env.VERCEL === '1' || process.env.VERCEL === 'true';
+}
+
 export function createApp(): Express {
   const app = express();
   /** JSON responses default to ETag → browsers send If-None-Match → 304 with empty body breaks axios clients. */
   app.set('etag', false);
+
+  if (isVercelRuntime()) {
+    app.use(vercelReadyMiddleware);
+  }
 
   if (process.env.NODE_ENV === 'production') {
     app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS) || 1);

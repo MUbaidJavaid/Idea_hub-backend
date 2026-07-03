@@ -1,4 +1,5 @@
 import cron from 'node-cron';
+import mongoose from 'mongoose';
 import type { Types } from 'mongoose';
 
 import { BehaviorEvent, Idea } from '../models/index.js';
@@ -13,6 +14,7 @@ type TrendAggRow = {
 cron.schedule(
   '*/15 * * * *',
   async () => {
+    if (mongoose.connection.readyState !== 1) return;
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     const events = await BehaviorEvent.aggregate<TrendAggRow>([

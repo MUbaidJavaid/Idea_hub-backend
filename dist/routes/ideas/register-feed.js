@@ -15,7 +15,8 @@ export function registerFeedRoutes(ideasRouter) {
         const hit = await cacheGetJson(cacheKey);
         if (hit) {
             res.setHeader('Cache-Control', 'private, max-age=30');
-            return res.json(hit);
+            res.json(hit);
+            return;
         }
         const ideas = await Idea.find(publicFeedFilter())
             .sort({ trendingScore: -1, likeCount: -1, _id: -1 })

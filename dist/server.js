@@ -1,27 +1,19 @@
 import 'dotenv/config';
-import mongoose from 'mongoose';
-import { connectDatabase } from './config/database.js';
 import { createApp } from './app.js';
+import { ensureApiReady } from './bootstrap-api.js';
 import { logger } from './lib/logger.js';
-import './jobs/trending.cron.js';
-import './jobs/trending-tags.cron.js';
-import './jobs/validation.cron.js';
-import './jobs/weekly-challenge.cron.js';
-import './jobs/live-rooms.cron.js';
-import './jobs/ai-coach-daily.cron.js';
-const PORT = Number(process.env.PORT) || 5000;
+const PORT = Number(process.env.PORT) || 10000;
+async function startBackgroundJobs() {
+    await import('./jobs/ai-coach-daily.cron.js');
+    await import('./jobs/live-rooms.cron.js');
+    await import('./jobs/trending-tags.cron.js');
+    await import('./jobs/trending.cron.js');
+    await import('./jobs/validation.cron.js');
+    await import('./jobs/weekly-challenge.cron.js');
+}
 async function main() {
-    await connectDatabase();
-    if (mongoose.connection.readyState === 1) {
-        if (String(process.env.ENABLE_VALIDATION_ENGINE ?? '').toLowerCase() === 'true') {
-            const { registerValidationListeners } = await import('./listeners/validation.listener.js');
-            registerValidationListeners();
-        }
-        if (String(process.env.ENABLE_GAMIFICATION ?? '').toLowerCase() === 'true') {
-            const { registerGamificationListeners } = await import('./listeners/gamification.listener.js');
-            registerGamificationListeners();
-        }
-    }
+    await ensureApiReady();
+    await startBackgroundJobs();
     const app = createApp();
     const server = app.listen(PORT);
     server.on('error', (err) => {

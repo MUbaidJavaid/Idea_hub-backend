@@ -1,7 +1,10 @@
 import cron from 'node-cron';
+import mongoose from 'mongoose';
 import { BehaviorEvent } from '../models/index.js';
 import { TrendingTagsSnapshot, TRENDING_TAGS_DOC_ID, } from '../models/TrendingTagsSnapshot.model.js';
 async function refreshTrendingTags() {
+    if (mongoose.connection.readyState !== 1)
+        return;
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const rows = await BehaviorEvent.aggregate([
         {
