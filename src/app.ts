@@ -23,6 +23,7 @@ import { aiCoachRouter } from './routes/ai-coach.js';
 import { collectionsRouter } from './routes/collections.js';
 import { stripeWebhookRoute } from './routes/stripe-webhook.js';
 import { subscriptionsRouter } from './routes/subscriptions.js';
+import { healthRouter } from './routes/health.js';
 
 const defaultDevOrigins = [
   'http://localhost:3000',
@@ -87,6 +88,8 @@ export function createApp(): Express {
   app.use(cors(corsOptions));
   app.options('*', cors(corsOptions));
 
+  app.use(healthRouter);
+
   app.use(httpLogger);
 
   app.post(
@@ -103,14 +106,6 @@ export function createApp(): Express {
 
   app.use(globalApiLimiter);
   app.use(requestTimeout(Number(process.env.REQUEST_TIMEOUT_MS) || 30_000));
-
-  app.get('/health', (_req, res) => {
-    res.json({
-      ok: true,
-      mongo:
-        mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-    });
-  });
 
   app.use('/api/auth', authRouter);
   app.use('/api/users', usersRouter);

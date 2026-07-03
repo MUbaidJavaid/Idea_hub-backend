@@ -6,7 +6,7 @@ import {
   ideaToApi,
 } from '../../lib/serialize-idea.js';
 import type { IIdeaDocument } from '../../models/Idea.model.js';
-import { IdeaPollVote, User, UserProgress } from '../../models/index.js';
+import { IdeaPollVote, Like, SavedIdea, User, UserProgress } from '../../models/index.js';
 import { isGamificationEnabled } from '../../services/gamification.service.js';
 import { authorMapForIds } from './author-utils.js';
 
@@ -16,15 +16,33 @@ export async function mapIdeasForPublicApi(
 ): Promise<Record<string, unknown>[]> {
   if (docs.length === 0) return [];
   const pollVotesByIdea = new Map<string, string>();
+  const likedIds = new Set<string>();
+  const savedIds = new Set<string>();
   if (viewerUserId && mongoose.Types.ObjectId.isValid(viewerUserId)) {
-    const votes = await IdeaPollVote.find({
-      userId: new mongoose.Types.ObjectId(viewerUserId),
-      ideaId: { $in: docs.map((d) => d._id) },
-    })
-      .select('ideaId optionKey')
-      .lean<{ ideaId: mongoose.Types.ObjectId; optionKey: string }[]>();
+    const userOid = new mongoose.Types.ObjectId(viewerUserId);
+    const ideaOids = docs.map((d) => d._id);
+    const [votes, likes, saves] = await Promise.all([
+      IdeaPollVote.find({
+        userId: userOid,
+        ideaId: { $in: ideaOids },
+      })
+        .select('ideaId optionKey')
+        .lean<{ ideaId: mongoose.Types.ObjectId; optionKey: string }[]>(),
+      Like.find({ userId: userOid, ideaId: { $in: ideaOids } })
+        .select('ideaId')
+        .lean<{ ideaId: mongoose.Types.ObjectId }[]>(),
+      SavedIdea.find({ userId: userOid, ideaId: { $in: ideaOids } })
+        .select('ideaId')
+        .lean<{ ideaId: mongoose.Types.ObjectId }[]>(),
+    ]);
     for (const v of votes) {
       pollVotesByIdea.set(String(v.ideaId), v.optionKey);
+    }
+    for (const l of likes) {
+      likedIds.add(String(l.ideaId));
+    }
+    for (const s of saves) {
+      savedIds.add(String(s.ideaId));
     }
   }
 
@@ -70,10 +88,19 @@ export async function mapIdeasForPublicApi(
     }
     const aid = String(j.authorId);
     const userObj = authors.get(aid);
-    if (!userObj) return j;
+    const ideaId = String(idea._id);
+    const flags =
+      viewerUserId && mongoose.Types.ObjectId.isValid(viewerUserId)
+        ? {
+            liked: likedIds.has(ideaId),
+            saved: savedIds.has(ideaId),
+          }
+        : {};
+    if (!userObj) return { ...j, ...flags };
     const g = gamify.get(aid);
     return {
       ...j,
+      ...flags,
       authorId: {
         ...userObj,
         ...(g ? { gamification: g } : {}),
