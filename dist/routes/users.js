@@ -7,6 +7,7 @@ import { userToApi, userToApiPublic } from '../lib/serialize-user.js';
 import { requireAuth } from '../middleware/require-auth.js';
 import { Follow, Idea, Notification, SavedIdea, User, } from '../models/index.js';
 import { getUserCollaborationsList, getUserDashboardData, } from '../services/user-dashboard.service.js';
+import { mapIdeasForPublicApi } from './ideas/map-public.js';
 export const usersRouter = Router();
 const LIST_PAGE = 20;
 function isDuplicateKey(err) {
@@ -430,7 +431,7 @@ usersRouter.get('/me/saved-ideas', requireDb, requireAuth, async (req, res) => {
     res.json({
         success: true,
         message: 'OK',
-        data: ordered.map((i) => ideaToApi(i)),
+        data: await mapIdeasForPublicApi(ordered, userId),
         meta: {
             nextCursor,
             hasMore: Boolean(nextCursor),
