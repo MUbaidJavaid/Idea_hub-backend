@@ -1,4 +1,4 @@
-import rateLimit from 'express-rate-limit';
+import { rateLimit } from 'express-rate-limit';
 const windowMs = Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000;
 const max = Number(process.env.RATE_LIMIT_MAX) ||
     (process.env.NODE_ENV === 'production' ? 3000 : 20_000);

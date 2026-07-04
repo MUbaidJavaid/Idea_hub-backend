@@ -1,7 +1,7 @@
 import compression from 'compression';
 import cors from 'cors';
 import express from 'express';
-import helmet from 'helmet';
+import * as helmetNs from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
 import { vercelReadyMiddleware } from './bootstrap-api.js';
 import { httpLogger } from './lib/logger.js';
@@ -71,10 +71,11 @@ export function createApp() {
         },
     });
     app.use(compressMiddleware);
-    const securityHeaders = helmet({
+    /** NodeNext types default import as the module namespace; use namespace + .default. */
+    const helmet = ('default' in helmetNs ? helmetNs.default : helmetNs);
+    app.use(helmet({
         crossOriginResourcePolicy: { policy: 'cross-origin' },
-    });
-    app.use(securityHeaders);
+    }));
     app.use(cors(corsOptions));
     app.options('*', cors(corsOptions));
     app.use(healthRouter);
