@@ -78,14 +78,11 @@ export function createApp(): Express {
   }) as RequestHandler;
   app.use(compressMiddleware);
 
-  /** NodeNext types helmet as a module namespace; resolve callable via unknown. */
-  type HelmetFactory = (options?: Record<string, unknown>) => RequestHandler;
-  const helmetNsAny = helmetNs as unknown as { default?: HelmetFactory } & HelmetFactory;
-  const helmet: HelmetFactory = helmetNsAny.default ?? helmetNsAny;
+  // Use namespace `.default` only — never cast the module namespace to a function type (TS2352 on NodeNext).
   app.use(
-    helmet({
+    helmetNs.default({
       crossOriginResourcePolicy: { policy: 'cross-origin' },
-    })
+    }) as RequestHandler
   );
 
   app.use(cors(corsOptions));

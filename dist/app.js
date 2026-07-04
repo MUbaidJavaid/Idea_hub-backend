@@ -71,9 +71,8 @@ export function createApp() {
         },
     });
     app.use(compressMiddleware);
-    const helmetNsAny = helmetNs;
-    const helmet = helmetNsAny.default ?? helmetNsAny;
-    app.use(helmet({
+    // Use namespace `.default` only — never cast the module namespace to a function type (TS2352 on NodeNext).
+    app.use(helmetNs.default({
         crossOriginResourcePolicy: { policy: 'cross-origin' },
     }));
     app.use(cors(corsOptions));
