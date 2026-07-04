@@ -71,8 +71,8 @@ export function createApp() {
         },
     });
     app.use(compressMiddleware);
-    /** NodeNext types default import as the module namespace; use namespace + .default. */
-    const helmet = ('default' in helmetNs ? helmetNs.default : helmetNs);
+    const helmetNsAny = helmetNs;
+    const helmet = helmetNsAny.default ?? helmetNsAny;
     app.use(helmet({
         crossOriginResourcePolicy: { policy: 'cross-origin' },
     }));
