@@ -1,4 +1,5 @@
-import rateLimit from 'express-rate-limit';
+import type { Request } from 'express';
+import { rateLimit } from 'express-rate-limit';
 
 const windowMs = Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000;
 const max =
@@ -16,7 +17,7 @@ export const globalApiLimiter = rateLimit({
     data: null,
     errors: [],
   },
-  skip: (req) =>
+  skip: (req: Request) =>
     req.path === '/' ||
     req.path === '/health' ||
     req.path.startsWith('/health/'),

@@ -1,7 +1,7 @@
 import compression from 'compression';
 import cors, { type CorsOptions } from 'cors';
 import express, { type Express, type Request, type RequestHandler, type Response } from 'express';
-import helmet from 'helmet';
+import * as helmetNs from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
 
 import { vercelReadyMiddleware } from './bootstrap-api.js';
@@ -78,12 +78,15 @@ export function createApp(): Express {
   }) as RequestHandler;
   app.use(compressMiddleware);
 
-  const securityHeaders: RequestHandler = (
-    helmet as unknown as (options?: Record<string, unknown>) => RequestHandler
-  )({
-    crossOriginResourcePolicy: { policy: 'cross-origin' },
-  });
-  app.use(securityHeaders);
+  /** NodeNext types default import as the module namespace; use namespace + .default. */
+  const helmet = (
+    'default' in helmetNs ? helmetNs.default : helmetNs
+  ) as (options?: Record<string, unknown>) => RequestHandler;
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    })
+  );
 
   app.use(cors(corsOptions));
   app.options('*', cors(corsOptions));
