@@ -1,10 +1,10 @@
 import compression from 'compression';
 import cors, { type CorsOptions } from 'cors';
 import express, { type Express, type Request, type RequestHandler, type Response } from 'express';
-import * as helmetNs from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
 
 import { vercelReadyMiddleware } from './bootstrap-api.js';
+import { securityHeaders } from './lib/helmet.js';
 import { httpLogger } from './lib/logger.js';
 import { globalApiLimiter } from './middleware/api-rate-limit.js';
 import { errorHandler } from './middleware/error-handler.js';
@@ -78,12 +78,7 @@ export function createApp(): Express {
   }) as RequestHandler;
   app.use(compressMiddleware);
 
-  // Use namespace `.default` only — never cast the module namespace to a function type (TS2352 on NodeNext).
-  app.use(
-    helmetNs.default({
-      crossOriginResourcePolicy: { policy: 'cross-origin' },
-    }) as RequestHandler
-  );
+  app.use(securityHeaders);
 
   app.use(cors(corsOptions));
   app.options('*', cors(corsOptions));
