@@ -30,12 +30,20 @@ const defaultDevOrigins = [
   'http://127.0.0.1:3000',
 ];
 
+/** Browsers send Origin without a trailing slash — FRONTEND_URL must match exactly. */
+function normalizeOrigin(url: string): string {
+  return url.trim().replace(/\/$/, '');
+}
+
 function resolveCorsOrigin(): boolean | string | string[] {
   const front = process.env.FRONTEND_URL?.trim();
-  if (front) return front;
+  if (front) return normalizeOrigin(front);
   const raw = process.env.CORS_ORIGIN?.trim();
   if (raw) {
-    const list = raw.split(',').map((s) => s.trim()).filter(Boolean);
+    const list = raw
+      .split(',')
+      .map((s) => normalizeOrigin(s))
+      .filter(Boolean);
     if (list.length > 0) return list;
   }
   if (process.env.NODE_ENV !== 'production') {
