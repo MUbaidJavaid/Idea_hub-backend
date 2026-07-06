@@ -1,65 +1,49 @@
 /**
- * Vercel HTTP entry — minimal shell; loads compiled app on first request.
- * Keeps cold-start failures inside the handler (JSON error) instead of FUNCTION_INVOCATION_FAILED.
+ * Vercel serverless entry.
+ * Runtime expects: export default function (req, res) { app(req, res) }
+ * Env vars come from Vercel dashboard — no dotenv here (avoids missing-package crash).
  */
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { createApp } from '../src/app.js';
+import { markRuntimeStarted } from '../src/lib/runtime-state.js';
 
-type HttpHandler = (req: IncomingMessage, res: ServerResponse) => unknown;
+markRuntimeStarted('vercel');
 
-let cachedApp: HttpHandler | null = null;
-let loadPromise: Promise<HttpHandler> | null = null;
+let app: ReturnType<typeof createApp> | null = null;
+let bootstrapError: unknown = null;
 
-async function loadExpressApp(): Promise<HttpHandler> {
-  const { markRuntimeStarted } = await import('../dist/lib/runtime-state.js');
-  markRuntimeStarted('vercel');
-
-  const { createApp } = await import('../dist/app.js');
-  const app = createApp();
-  return app as unknown as HttpHandler;
+try {
+  app = createApp();
+} catch (err) {
+  bootstrapError = err;
+  console.error('[vercel] createApp failed at module load', err);
 }
 
-function getApp(): Promise<HttpHandler> {
-  if (cachedApp) return Promise.resolve(cachedApp);
-  if (!loadPromise) {
-    loadPromise = loadExpressApp()
-      .then((app) => {
-        cachedApp = app;
-        return app;
-      })
-      .catch((err) => {
-        loadPromise = null;
-        throw err;
-      });
-  }
-  return loadPromise;
-}
-
-function sendBootstrapError(res: ServerResponse, err: unknown): void {
-  const message = err instanceof Error ? err.message : String(err);
-  console.error('[vercel] bootstrap failed:', err);
-  if (res.headersSent) return;
-  res.statusCode = 500;
-  res.setHeader('content-type', 'application/json; charset=utf-8');
-  res.end(
-    JSON.stringify({
-      success: false,
-      message: 'API failed to start',
-      code: 'BOOTSTRAP_ERROR',
-      detail: message,
-      data: null,
-      errors: [],
-    })
-  );
-}
-
-export default async function handler(
+export default function handler(
   req: IncomingMessage,
   res: ServerResponse
-): Promise<void> {
-  try {
-    const app = await getApp();
-    app(req, res);
-  } catch (err) {
-    sendBootstrapError(res, err);
+): void {
+  if (!app) {
+    const detail =
+      bootstrapError instanceof Error
+        ? bootstrapError.message
+        : String(bootstrapError ?? 'unknown');
+    console.error('[vercel] handler called but app not initialized:', detail);
+    if (!res.headersSent) {
+      res.statusCode = 500;
+      res.setHeader('content-type', 'application/json; charset=utf-8');
+      res.end(
+        JSON.stringify({
+          success: false,
+          message: 'API failed to start',
+          code: 'BOOTSTRAP_ERROR',
+          detail,
+          data: null,
+          errors: [],
+        })
+      );
+    }
+    return;
   }
+  app(req, res);
 }
