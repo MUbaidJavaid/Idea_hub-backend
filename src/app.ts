@@ -4,7 +4,11 @@ import express, { type Express, type Request, type RequestHandler, type Response
 import mongoSanitize from 'express-mongo-sanitize';
 
 import { vercelReadyMiddleware } from './bootstrap-api.js';
+<<<<<<< HEAD
 import { getSecurityHeaders } from './lib/helmet.js';
+=======
+import { securityHeaders } from './lib/helmet.js';
+>>>>>>> 5c71605708b9b39af445cd40f6626e131afbec28
 import { httpLogger } from './lib/logger.js';
 import { globalApiLimiter } from './middleware/api-rate-limit.js';
 import { errorHandler } from './middleware/error-handler.js';
@@ -78,7 +82,11 @@ export function createApp(): Express {
   }) as RequestHandler;
   app.use(compressMiddleware);
 
+<<<<<<< HEAD
   app.use(getSecurityHeaders());
+=======
+  app.use(securityHeaders);
+>>>>>>> 5c71605708b9b39af445cd40f6626e131afbec28
 
   app.use(cors(corsOptions));
   app.options('*', cors(corsOptions));
