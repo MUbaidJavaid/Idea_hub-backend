@@ -6,14 +6,15 @@ import 'dotenv/config';
 
 import express, { type Express } from 'express';
 
+import { createApp } from './app.js';
 import { markRuntimeStarted } from './lib/runtime-state.js';
 
 markRuntimeStarted('vercel');
 
 function bootstrapFailureApp(err: unknown): Express {
-  const app = express();
+  const fallback = express();
   console.error('[api] createApp failed during bootstrap', err);
-  app.all('*', (_req, res) => {
+  fallback.all('*', (_req, res) => {
     res.status(500).json({
       success: false,
       message: 'API initialization failed',
@@ -22,15 +23,15 @@ function bootstrapFailureApp(err: unknown): Express {
       errors: [],
     });
   });
-  return app;
+  return fallback;
 }
 
-let app: Express;
-try {
-  const { createApp } = await import('./app.js');
-  app = createApp();
-} catch (err) {
-  app = bootstrapFailureApp(err);
-}
+const app: Express = (() => {
+  try {
+    return createApp();
+  } catch (err) {
+    return bootstrapFailureApp(err);
+  }
+})();
 
 export default app;
