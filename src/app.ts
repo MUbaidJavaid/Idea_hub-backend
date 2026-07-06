@@ -1,9 +1,9 @@
-import compression from 'compression';
+import express, { type Express } from 'express';
 import cors, { type CorsOptions } from 'cors';
-import express, { type Express, type Request, type RequestHandler, type Response } from 'express';
 import mongoSanitize from 'express-mongo-sanitize';
 
 import { vercelReadyMiddleware } from './bootstrap-api.js';
+import { getCompressionMiddleware } from './lib/compression.js';
 import { getSecurityHeaders } from './lib/helmet.js';
 import { httpLogger } from './lib/logger.js';
 import { globalApiLimiter } from './middleware/api-rate-limit.js';
@@ -67,16 +67,10 @@ export function createApp(): Express {
     app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS) || 1);
   }
 
-  /** Cast avoids duplicate @types/express-serve-static-core (e.g. under @types/compression) breaking app.use overloads on CI. */
-  const compressMiddleware: RequestHandler = compression({
-    level: 6,
-    threshold: 2048,
-    filter: (req: Request, res: Response) => {
-      if (req.headers['x-no-compression']) return false;
-      return compression.filter(req, res);
-    },
-  }) as RequestHandler;
-  app.use(compressMiddleware);
+  const compressMiddleware = getCompressionMiddleware();
+  if (compressMiddleware) {
+    app.use(compressMiddleware);
+  }
 
   app.use(getSecurityHeaders());
 

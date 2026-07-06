@@ -2,10 +2,11 @@ import { randomUUID } from 'node:crypto';
 import pino from 'pino';
 import { pinoHttp } from 'pino-http';
 const isProd = process.env.NODE_ENV === 'production';
+const onVercel = process.env.VERCEL === '1' || process.env.VERCEL === 'true';
 const level = process.env.LOG_LEVEL ??
     (isProd ? 'info' : 'debug');
-/** Root logger: JSON in production, pretty in development (stdout). */
-export const logger = isProd
+/** Plain JSON logs on Vercel/production — pino-pretty is dev-only and not bundled on Vercel. */
+export const logger = isProd || onVercel
     ? pino({ level })
     : pino({
         level,

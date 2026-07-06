@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import pino from 'pino';
-/** Root logger: JSON in production, pretty in development (stdout). */
+/** Plain JSON logs on Vercel/production — pino-pretty is dev-only and not bundled on Vercel. */
 export declare const logger: pino.Logger<never, boolean>;
 /**
  * HTTP request/response logging (method, url, status, duration).
