@@ -9,7 +9,7 @@ import mongoose from 'mongoose';
 
 import { logger } from '../lib/logger.js';
 import { signTokenPair, verifyRefreshToken } from '../lib/jwt.js';
-import { authLimiter } from '../middleware/rateLimiter.js';
+import { getAuthLimiter } from '../middleware/rateLimiter.js';
 import {
   denyRefreshToken,
   isRefreshTokenDenied,
@@ -48,7 +48,7 @@ function validationMessage(err: unknown): string {
   return 'Registration failed';
 }
 
-authRouter.post('/register', authLimiter, dbReady, async (req, res) => {
+authRouter.post('/register', getAuthLimiter(), dbReady, async (req, res) => {
   try {
     const { username, email, password, fullName } = req.body as Record<
       string,
@@ -143,7 +143,7 @@ authRouter.post('/register', authLimiter, dbReady, async (req, res) => {
   }
 });
 
-authRouter.post('/login', authLimiter, dbReady, async (req, res) => {
+authRouter.post('/login', getAuthLimiter(), dbReady, async (req, res) => {
   try {
     const { email, password } = req.body as Record<string, unknown>;
     if (typeof email !== 'string' || typeof password !== 'string') {
@@ -308,7 +308,7 @@ async function verifyEmailHandler(
 authRouter.post('/verify-email/:token', dbReady, verifyEmailHandler);
 authRouter.get('/verify-email/:token', dbReady, verifyEmailHandler);
 
-authRouter.post('/forgot-password', authLimiter, dbReady, async (req, res) => {
+authRouter.post('/forgot-password', getAuthLimiter(), dbReady, async (req, res) => {
   try {
     const raw = req.body as Record<string, unknown>;
     const email =
@@ -363,7 +363,7 @@ authRouter.post('/forgot-password', authLimiter, dbReady, async (req, res) => {
 
 authRouter.post(
   '/reset-password/:token',
-  authLimiter,
+  getAuthLimiter(),
   dbReady,
   async (req, res) => {
     try {

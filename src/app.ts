@@ -6,7 +6,7 @@ import { vercelReadyMiddleware } from './bootstrap-api.js';
 import { getCompressionMiddleware } from './lib/compression.js';
 import { getSecurityHeaders } from './lib/helmet.js';
 import { httpLogger } from './lib/logger.js';
-import { globalApiLimiter } from './middleware/api-rate-limit.js';
+import { getGlobalApiLimiter } from './middleware/api-rate-limit.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { requestTimeout } from './middleware/request-timeout.js';
 import { adminRouter } from './routes/admin.js';
@@ -93,7 +93,7 @@ export function createApp(): Express {
   app.use(express.urlencoded({ extended: true, limit: '1mb' }));
   app.use(mongoSanitize({ replaceWith: '_' }));
 
-  app.use(globalApiLimiter);
+  app.use(getGlobalApiLimiter());
   app.use(requestTimeout(Number(process.env.REQUEST_TIMEOUT_MS) || 30_000));
 
   app.use('/api/auth', authRouter);

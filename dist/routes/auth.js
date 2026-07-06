@@ -3,7 +3,7 @@ import { Router, } from 'express';
 import mongoose from 'mongoose';
 import { logger } from '../lib/logger.js';
 import { signTokenPair, verifyRefreshToken } from '../lib/jwt.js';
-import { authLimiter } from '../middleware/rateLimiter.js';
+import { getAuthLimiter } from '../middleware/rateLimiter.js';
 import { denyRefreshToken, isRefreshTokenDenied, } from '../services/token-denylist.service.js';
 import { userToApi } from '../lib/serialize-user.js';
 import { User } from '../models/index.js';
@@ -32,7 +32,7 @@ function validationMessage(err) {
     }
     return 'Registration failed';
 }
-authRouter.post('/register', authLimiter, dbReady, async (req, res) => {
+authRouter.post('/register', getAuthLimiter(), dbReady, async (req, res) => {
     try {
         const { username, email, password, fullName } = req.body;
         if (typeof username !== 'string' ||
@@ -110,7 +110,7 @@ authRouter.post('/register', authLimiter, dbReady, async (req, res) => {
         });
     }
 });
-authRouter.post('/login', authLimiter, dbReady, async (req, res) => {
+authRouter.post('/login', getAuthLimiter(), dbReady, async (req, res) => {
     try {
         const { email, password } = req.body;
         if (typeof email !== 'string' || typeof password !== 'string') {
@@ -257,7 +257,7 @@ async function verifyEmailHandler(req, res) {
 }
 authRouter.post('/verify-email/:token', dbReady, verifyEmailHandler);
 authRouter.get('/verify-email/:token', dbReady, verifyEmailHandler);
-authRouter.post('/forgot-password', authLimiter, dbReady, async (req, res) => {
+authRouter.post('/forgot-password', getAuthLimiter(), dbReady, async (req, res) => {
     try {
         const raw = req.body;
         const email = typeof raw.email === 'string' ? raw.email.trim().toLowerCase() : '';
@@ -300,7 +300,7 @@ authRouter.post('/forgot-password', authLimiter, dbReady, async (req, res) => {
         });
     }
 });
-authRouter.post('/reset-password/:token', authLimiter, dbReady, async (req, res) => {
+authRouter.post('/reset-password/:token', getAuthLimiter(), dbReady, async (req, res) => {
     try {
         const rawToken = req.params.token;
         const password = req.body?.password;
