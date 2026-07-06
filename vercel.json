@@ -2,12 +2,12 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "npm install",
   "buildCommand": "npm run build",
-  "rewrites": [{ "source": "/(.*)", "destination": "/dist/index" }],
+  "rewrites": [{ "source": "/(.*)", "destination": "/api" }],
   "functions": {
-    "dist/index.js": {
+    "api/index.ts": {
       "maxDuration": 60,
       "memory": 1024,
-      "excludeFiles": "{node_modules/@ffmpeg-installer/**,node_modules/fluent-ffmpeg/**}"
+      "includeFiles": "dist/**"
     }
   }
 }

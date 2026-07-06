@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import mongoose, { Schema, } from 'mongoose';
 const SALT_ROUNDS = 12;
 const BCRYPT_HASH_REGEX = /^\$2[aby]\$\d{2}\$/;

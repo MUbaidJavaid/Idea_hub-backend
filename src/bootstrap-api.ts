@@ -26,12 +26,14 @@ async function registerListeners(): Promise<void> {
 export async function ensureApiReady(): Promise<void> {
   if (!ready) {
     ready = (async () => {
-      await connectDatabase();
-      await registerListeners();
-    })().catch((err) => {
-      ready = null;
-      throw err;
-    });
+      try {
+        await connectDatabase();
+        await registerListeners();
+      } catch (err) {
+        ready = null;
+        console.error('[api] warm-up failed (routes may return 503):', err);
+      }
+    })();
   }
   await ready;
 }

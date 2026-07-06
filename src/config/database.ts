@@ -13,11 +13,6 @@ export async function connectDatabase(): Promise<void> {
   const prod = process.env.NODE_ENV === 'production';
 
   if (!uri) {
-    if (prod) {
-      throw new Error(
-        'MONGODB_URI is required in production. In Render: add Environment → MONGODB_URI with your MongoDB Atlas connection string (mongodb+srv://...), or use Render MongoDB.'
-      );
-    }
     logger.warn(
       'MONGODB_URI is not set — database features disabled; /health will show mongo disconnected'
     );
@@ -25,9 +20,10 @@ export async function connectDatabase(): Promise<void> {
   }
 
   if (prod && looksLikeLocalMongo(uri)) {
-    throw new Error(
-      'MONGODB_URI points to localhost, which is not available on Vercel or Render. Use MongoDB Atlas (mongodb+srv://...) and allow 0.0.0.0/0 (or Vercel IPs) in Atlas Network Access.'
+    logger.error(
+      'MONGODB_URI points to localhost, which is not available on Vercel or Render. Use MongoDB Atlas (mongodb+srv://...).'
     );
+    return;
   }
 
   mongoose.connection.on('connected', () =>

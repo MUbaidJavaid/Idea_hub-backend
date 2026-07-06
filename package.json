@@ -2,7 +2,7 @@
   "name": "@ideahub/api",
   "version": "0.1.0",
   "private": true,
-  "description": "Ideas Hub backend API (api.ideahub.com) \u2014 Express/Mongoose/BullMQ",
+  "description": "Ideas Hub backend API (api.ideahub.com) — Express/Mongoose/BullMQ",
   "type": "module",
   "engines": {
     "node": "20.x"
@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.build.json",
+    "smoke:vercel": "npm run build && node --import tsx scripts/smoke-vercel-entry.mjs",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
     "test-scanner": "tsx src/test-scanner.ts",
@@ -18,7 +19,7 @@
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "axios": "^1.7.9",
-    "bcrypt": "^5.1.1",
+    "bcryptjs": "^3.0.3",
     "bullmq": "^5.34.5",
     "cloudinary": "^2.5.1",
     "compression": "^1.8.1",
@@ -53,7 +54,7 @@
     "@types/express-serve-static-core": "5.0.6"
   },
   "devDependencies": {
-    "@types/bcrypt": "^5.0.2",
+    "@types/bcryptjs": "^2.4.6",
     "@types/compression": "^1.8.1",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
