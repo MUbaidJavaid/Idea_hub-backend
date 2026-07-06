@@ -6,3 +6,4 @@ temp_interactive_push.bat
 config.bat
 .env
 /dist
+.vercel
