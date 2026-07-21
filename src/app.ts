@@ -23,6 +23,7 @@ import { aiCoachRouter } from './routes/ai-coach.js';
 import { collectionsRouter } from './routes/collections.js';
 import { stripeWebhookRoute } from './routes/stripe-webhook.js';
 import { subscriptionsRouter } from './routes/subscriptions.js';
+import { storiesRouter } from './routes/stories.js';
 import { healthRouter } from './routes/health.js';
 
 const defaultDevOrigins = [
@@ -111,6 +112,7 @@ export function createApp(): Express {
   app.use('/api/ideas', ideasRouter);
   app.use('/api/collections', collectionsRouter);
   app.use('/api/subscriptions', subscriptionsRouter);
+  app.use('/api/stories', storiesRouter);
   app.use('/api/upload', uploadRouter);
   app.use('/api/admin', adminRouter);
   app.use('/api/behavior', behaviorRouter);

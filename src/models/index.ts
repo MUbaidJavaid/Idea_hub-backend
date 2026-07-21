@@ -71,6 +71,12 @@ export {
 } from './Notification.model.js';
 export { SavedIdea, type ISavedIdea } from './SavedIdea.model.js';
 export {
+  Story,
+  STORY_LIFETIME_MS,
+  type IStory,
+  type StoryMediaType,
+} from './Story.model.js';
+export {
   TrendingTagsSnapshot,
   type ITrendingTagsSnapshot,
   type ITrendingTagRow,

@@ -7,6 +7,7 @@ import {
   createBillingPortalSession,
   createCheckoutSession,
   getStripe,
+  syncSubscriptionFromStripe,
 } from '../services/stripe-billing.service.js';
 
 export const subscriptionsRouter = Router();
@@ -127,6 +128,54 @@ subscriptionsRouter.get(
       success: true,
       message: 'OK',
       data: { url: session.url },
+    });
+  }
+);
+
+/** After Checkout success: pull Stripe subscription into the user doc (webhook fallback). */
+subscriptionsRouter.post(
+  '/sync',
+  requireDb,
+  requireAuth,
+  async (_req, res) => {
+    const userId = res.locals.authUserId as string;
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      res.status(401).json({
+        success: false,
+        message: 'Invalid session',
+        data: null,
+      });
+      return;
+    }
+
+    const user = await User.findById(userId).select('email subscription');
+    if (!user?.email) {
+      res.status(400).json({
+        success: false,
+        message: 'User email required',
+        data: null,
+      });
+      return;
+    }
+
+    const result = await syncSubscriptionFromStripe({
+      userId,
+      email: user.email,
+    });
+
+    const fresh = await User.findById(userId).select('subscription');
+    res.json({
+      success: true,
+      message: result.synced ? 'Subscription synced' : result.reason,
+      data: {
+        synced: result.synced,
+        reason: result.synced ? undefined : result.reason,
+        plan: result.synced ? result.plan : fresh?.subscription?.plan ?? 'free',
+        status: result.synced
+          ? result.status
+          : fresh?.subscription?.status ?? 'active',
+        subscription: fresh?.subscription ?? null,
+      },
     });
   }
 );

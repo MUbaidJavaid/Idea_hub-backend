@@ -40,6 +40,8 @@ export function getSubscriptionFromUser(
 /**
  * Paid access while period not ended; cancelled subscriptions stay valid until
  * `currentPeriodEnd` (Stripe behavior).
+ * If period end is missing but Stripe sub id + active status exist (webhook lag),
+ * still treat as paid so checkout success is not stuck on free.
  */
 export function getEffectivePlan(user: {
   subscription?: IUserSubscription | null;
@@ -50,18 +52,22 @@ export function getEffectivePlan(user: {
   }
   const s = getSubscriptionFromUser(user);
   if (s.plan === 'free') return 'free';
+  if (s.status === 'expired') return 'free';
+  if (s.plan !== 'pro' && s.plan !== 'investor') return 'free';
+
   const end = s.currentPeriodEnd
     ? new Date(s.currentPeriodEnd).getTime()
     : 0;
-  if (!end || end <= Date.now()) {
-    return 'free';
-  }
-  if (s.status === 'expired') {
-    return 'free';
-  }
-  if (s.plan === 'pro' || s.plan === 'investor') {
+  if (end && end > Date.now()) return s.plan;
+
+  if (
+    !end &&
+    s.stripeSubscriptionId &&
+    (s.status === 'active' || s.status === 'cancelled')
+  ) {
     return s.plan;
   }
+
   return 'free';
 }
 
