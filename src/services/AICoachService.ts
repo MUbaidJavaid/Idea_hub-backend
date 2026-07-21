@@ -2,6 +2,13 @@ import mongoose from 'mongoose';
 import { z } from 'zod';
 
 import { aiCoachEnabled } from '../config/ai-coach.config.js';
+import {
+  buildCoachChatSystemPrompt,
+  buildDailyBriefSystemPrompt,
+  buildIdeaFeedbackSystemPrompt,
+  COACH_OFF_TOPIC_REPLY,
+  looksOffTopicIdeaHub,
+} from '../config/ai-coach-knowledge.js';
 import { XP_REWARDS } from '../config/xp.config.js';
 import {
   chatCompletionContent,
@@ -114,7 +121,7 @@ export async function generateIdeaFeedback(ideaId: string): Promise<void> {
   if (!key) {
     parsed = heuristicIdeaFeedback({ title, description, category });
   } else {
-    const prompt = `You are an expert startup mentor. Give concise, actionable feedback.
+    const prompt = `Give concise, actionable Idea Hub publish feedback for this idea.
 Title: ${title.slice(0, 200)}
 Description: ${description.slice(0, 8000)}
 Category: ${category}
@@ -128,7 +135,7 @@ Return ONLY valid JSON (no markdown):
     { "issue": "short problem", "fix": "specific action", "xpReward": 50 }
   ],
   "marketInsight": "one key market observation",
-  "nextStep": "single most important next action"
+  "nextStep": "single most important next action on Idea Hub"
 }`;
 
     try {
@@ -139,7 +146,7 @@ Return ONLY valid JSON (no markdown):
         messages: [
           {
             role: 'system',
-            content: 'Reply with compact JSON only. No markdown.',
+            content: buildIdeaFeedbackSystemPrompt(),
           },
           { role: 'user', content: prompt },
         ],
@@ -388,7 +395,7 @@ Return ONLY JSON:
         temperature: 0.45,
         responseFormatJson: true,
         messages: [
-          { role: 'system', content: 'JSON only, no markdown.' },
+          { role: 'system', content: buildDailyBriefSystemPrompt() },
           { role: 'user', content: prompt },
         ],
       });
@@ -600,23 +607,32 @@ export async function coachChat(params: {
   let reply: string;
   if (!key) {
     reply =
-      "I'm running in offline mode (no AI key). Add GEMINI_API_KEY or OPENAI_API_KEY to enable full coaching. Meanwhile: tighten your one-line pitch and validate with one real user this week.";
+      "I'm running in offline mode (no AI key). Ask about Idea Hub features — posting ideas, stories, pricing, marketplace — or add GROQ_API_KEY / GEMINI_API_KEY / OPENAI_API_KEY for full coaching.";
+  } else if (looksOffTopicIdeaHub(text)) {
+    reply = COACH_OFF_TOPIC_REPLY;
   } else {
-    const sys = `You are "Ideas Hub AI Coach", a concise startup mentor. User: ${user.fullName || user.username}. Their published ideas:\n${portfolio || '(none)'}${ideaCtx}\nKeep answers under 180 words unless they ask for detail. Be actionable.`;
+    const sys = buildCoachChatSystemPrompt({
+      displayName: String(user.fullName || user.username),
+      portfolioBlock: portfolio,
+      ideaContext: ideaCtx,
+    });
     try {
       reply = await chatCompletionContent({
         model: coachLlmModel(),
-        temperature: 0.5,
+        temperature: 0.35,
         messages: [
           { role: 'system', content: sys },
-          { role: 'user', content: `Conversation so far:\n${history}\n\nReply as Coach.` },
+          {
+            role: 'user',
+            content: `Conversation so far:\n${history}\n\nReply as Idea Hub AI Coach. If the latest user message is off-topic for Idea Hub, refuse and redirect — do not answer general knowledge questions.`,
+          },
         ],
         timeoutMs: 75_000,
       });
     } catch (e) {
       console.warn('[AICoach] chat failed', e);
       reply =
-        'I hit a temporary snag. Try again in a moment — or work on clarifying your target customer in one sentence.';
+        'I hit a temporary snag. Try again in a moment — ask about posting an idea, your validation score, or Idea Hub pricing.';
     }
   }
 

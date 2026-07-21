@@ -7,6 +7,10 @@ import { requireStaff } from '../middleware/require-staff.js';
 import { AdminAuditLog, Comment, Idea, User } from '../models/index.js';
 import { countSuperAdmins, purgeIdea, purgeUser, } from '../services/admin-purge.service.js';
 import { getAdminDashboardStats } from '../services/admin-dashboard.service.js';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+
 export const adminRouter = Router();
 function requireDb(_req, res, next) {
     if (mongoose.connection.readyState !== 1) {
