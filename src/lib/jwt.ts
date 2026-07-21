@@ -1,14 +1,15 @@
 import jwt from 'jsonwebtoken';
 
-const ACCESS_EXPIRES = process.env.JWT_ACCESS_EXPIRES?.trim() || '15m';
-const REFRESH_EXPIRES = process.env.JWT_REFRESH_EXPIRES?.trim() || '7d';
+/** Longer access life reduces reload races; refresh still rotates every 7d. */
+const ACCESS_EXPIRES = process.env.JWT_ACCESS_EXPIRES?.trim() || '7d';
+const REFRESH_EXPIRES = process.env.JWT_REFRESH_EXPIRES?.trim() || '30d';
 
 function secrets(): { access: string; refresh: string } {
   const access =
-    process.env.JWT_ACCESS_SECRET ||
+    process.env.JWT_ACCESS_SECRET?.trim() ||
     (process.env.NODE_ENV !== 'production' ? 'dev-ideahub-access-secret' : '');
   const refresh =
-    process.env.JWT_REFRESH_SECRET ||
+    process.env.JWT_REFRESH_SECRET?.trim() ||
     (process.env.NODE_ENV !== 'production' ? 'dev-ideahub-refresh-secret' : '');
   if (!access || !refresh) {
     throw new Error(

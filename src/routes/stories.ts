@@ -3,6 +3,10 @@ import mongoose from 'mongoose';
 
 import { requireAuth } from '../middleware/require-auth.js';
 import { Story, STORY_LIFETIME_MS, User } from '../models/index.js';
+import {
+  assertTextAllowed,
+  ContentBlockedError,
+} from '../services/groq-moderation.service.js';
 
 export const storiesRouter = Router();
 
@@ -98,6 +102,22 @@ storiesRouter.post('/', requireDb, requireAuth, async (req, res) => {
     typeof body.caption === 'string' ? body.caption.trim().slice(0, 200) : '';
   const thumbnailUrl =
     typeof body.thumbnailUrl === 'string' ? body.thumbnailUrl.trim() : '';
+
+  if (caption) {
+    try {
+      await assertTextAllowed(caption);
+    } catch (e) {
+      if (e instanceof ContentBlockedError) {
+        res.status(400).json({
+          success: false,
+          message: e.message,
+          data: { categories: e.categories },
+        });
+        return;
+      }
+      throw e;
+    }
+  }
 
   const expiresAt = new Date(Date.now() + STORY_LIFETIME_MS);
   const doc = await Story.create({

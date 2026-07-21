@@ -6,6 +6,7 @@ import { requireAuth } from '../../middleware/require-auth.js';
 import { Idea } from '../../models/index.js';
 import {
   CloudinaryConfigError,
+  ContentBlockedError,
   destroyFromCloudinary,
   uploadToCloudinary,
 } from '../../services/cloudinary.service.js';
@@ -165,13 +166,21 @@ export function registerMediaRoutes(ideasRouter: Router): void {
           data: payload,
         });
       } catch (err) {
+        if (err instanceof ContentBlockedError) {
+          res.status(400).json({
+            success: false,
+            message: err.message,
+            data: { categories: err.categories },
+          });
+          return;
+        }
         const message =
           err instanceof CloudinaryConfigError
             ? err.message
             : err instanceof Error
               ? err.message
               : 'Upload failed';
-        res.status(400).json({
+        res.status(err instanceof CloudinaryConfigError ? 503 : 400).json({
           success: false,
           message,
           data: null,

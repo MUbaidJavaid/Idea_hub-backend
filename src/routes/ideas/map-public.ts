@@ -8,7 +8,7 @@ import {
 import type { IIdeaDocument } from '../../models/Idea.model.js';
 import { IdeaPollVote, Like, SavedIdea, User, UserProgress } from '../../models/index.js';
 import { isGamificationEnabled } from '../../services/gamification.service.js';
-import { authorMapForIds } from './author-utils.js';
+import { authorMapForIds, deletedAuthorPlaceholder } from './author-utils.js';
 
 export async function mapIdeasForPublicApi(
   docs: IIdeaDocument[],
@@ -96,7 +96,13 @@ export async function mapIdeasForPublicApi(
             saved: savedIds.has(ideaId),
           }
         : {};
-    if (!userObj) return { ...j, ...flags };
+    if (!userObj) {
+      return {
+        ...j,
+        ...flags,
+        authorId: deletedAuthorPlaceholder(aid),
+      };
+    }
     const g = gamify.get(aid);
     return {
       ...j,

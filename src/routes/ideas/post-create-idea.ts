@@ -12,6 +12,10 @@ import {
   scanJobPriorityForUser,
   startOfUtcMonth,
 } from '../../lib/subscription.js';
+import {
+  assertTextAllowed,
+  ContentBlockedError,
+} from '../../services/groq-moderation.service.js';
 import { CATEGORIES, MEDIA_TYPES } from './constants.js';
 import { mapIdeasForPublicApi } from './map-public.js';
 
@@ -65,6 +69,24 @@ export async function postCreateIdea(req: Request, res: Response): Promise<void>
       data: null,
     });
     return;
+  }
+
+  try {
+    await assertTextAllowed(
+      [title, description, ...(Array.isArray(body.tags) ? body.tags : [])]
+        .map((t) => String(t))
+        .join('\n')
+    );
+  } catch (e) {
+    if (e instanceof ContentBlockedError) {
+      res.status(400).json({
+        success: false,
+        message: e.message,
+        data: { categories: e.categories },
+      });
+      return;
+    }
+    throw e;
   }
 
   if (!CATEGORIES.has(category)) {

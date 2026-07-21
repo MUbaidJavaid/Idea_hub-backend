@@ -6,6 +6,7 @@ import { logger } from '../lib/logger.js';
 import { requireAuth } from '../middleware/require-auth.js';
 import {
   CloudinaryConfigError,
+  ContentBlockedError,
   uploadToCloudinary,
 } from '../services/cloudinary.service.js';
 
@@ -138,6 +139,18 @@ uploadRouter.post(
         },
       });
     } catch (e) {
+      if (e instanceof ContentBlockedError) {
+        log.warn(
+          { categories: e.categories, originalname: req.file?.originalname },
+          'upload blocked by Groq content filter'
+        );
+        res.status(400).json({
+          success: false,
+          message: e.message,
+          data: { categories: e.categories },
+        });
+        return;
+      }
       if (e instanceof CloudinaryConfigError) {
         log.error({ err: e.message }, 'cloudinary not configured');
         res.status(503).json({

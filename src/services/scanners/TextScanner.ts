@@ -1,4 +1,5 @@
 import type { ScanResult } from './types.js';
+import { moderateText } from '../groq-moderation.service.js';
 
 const HATE_PATTERNS: RegExp[] = [
   /\b(kill\s+(yourself|himself|herself|themself|everyone|all|people))\b/gi,
@@ -97,6 +98,22 @@ export class TextScanner {
     score += inj.penalty;
     violations.push(...inj.violations);
     details.promptInjection = inj.details;
+
+    // Groq Llama Guard — second layer beyond keyword heuristics.
+    const groq = await moderateText(text);
+    details.groq = {
+      skipped: groq.skipped,
+      allowed: groq.allowed,
+      categories: groq.categories,
+      raw: groq.raw ? groq.raw.slice(0, 80) : '',
+    };
+    if (!groq.skipped && !groq.allowed) {
+      score = Math.min(score, 0.25);
+      for (const c of groq.categories) {
+        violations.push(`groq_${c.toLowerCase()}`);
+      }
+      if (!groq.categories.length) violations.push('groq_unsafe');
+    }
 
     return {
       score: clamp01(score),

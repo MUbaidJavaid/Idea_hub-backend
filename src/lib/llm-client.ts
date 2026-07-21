@@ -3,10 +3,18 @@ import axios from 'axios';
 const OPENAI_CHAT_BASE = 'https://api.openai.com/v1';
 const GEMINI_OPENAI_COMPAT_BASE =
   'https://generativelanguage.googleapis.com/v1beta/openai';
+const GROQ_OPENAI_COMPAT_BASE = 'https://api.groq.com/openai/v1';
 
+/**
+ * Provider priority when no VALIDATION_CHAT_BASE_URL override:
+ * Groq (free) → Gemini → OpenAI.
+ */
 export function llmChatBaseUrl(): string {
   const explicit = process.env.VALIDATION_CHAT_BASE_URL?.trim();
   if (explicit) return explicit.replace(/\/$/, '');
+  if (process.env.GROQ_API_KEY?.trim()) {
+    return GROQ_OPENAI_COMPAT_BASE;
+  }
   if (process.env.GEMINI_API_KEY?.trim()) {
     return GEMINI_OPENAI_COMPAT_BASE;
   }
@@ -19,24 +27,33 @@ export function llmChatBaseUrl(): string {
 
 export function llmApiKey(): string | undefined {
   return (
+    process.env.GROQ_API_KEY?.trim() ||
     process.env.GEMINI_API_KEY?.trim() ||
     process.env.OPENAI_API_KEY?.trim() ||
     undefined
   );
 }
 
-/** Model for validation + coach unless OPENAI_COACH_MODEL overrides coach calls. */
+/** Validation / metadata — fast free-tier Groq model by default. */
 export function llmModel(): string {
-  return (
-    process.env.OPENAI_VALIDATION_MODEL?.trim() || 'gpt-4o-mini'
-  );
+  if (process.env.OPENAI_VALIDATION_MODEL?.trim()) {
+    return process.env.OPENAI_VALIDATION_MODEL.trim();
+  }
+  if (process.env.GROQ_API_KEY?.trim()) {
+    return 'llama-3.1-8b-instant';
+  }
+  return 'gpt-4o-mini';
 }
 
+/** Coach chat — stronger Groq model when available on free plan. */
 export function coachLlmModel(): string {
-  return (
-    process.env.OPENAI_COACH_MODEL?.trim() ||
-    llmModel()
-  );
+  if (process.env.OPENAI_COACH_MODEL?.trim()) {
+    return process.env.OPENAI_COACH_MODEL.trim();
+  }
+  if (process.env.GROQ_API_KEY?.trim()) {
+    return 'llama-3.3-70b-versatile';
+  }
+  return llmModel();
 }
 
 export async function chatCompletionContent(params: {

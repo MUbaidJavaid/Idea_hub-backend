@@ -3,6 +3,11 @@ import { Readable } from 'node:stream';
 import { v2 as cloudinary } from 'cloudinary';
 import { fileTypeFromBuffer } from 'file-type';
 
+import {
+  assertImageAllowed,
+  ContentBlockedError,
+} from './groq-moderation.service.js';
+
 const FOLDER = process.env.CLOUDINARY_FOLDER ?? 'ideahub';
 
 const ALLOWED_MIME = new Set([
@@ -90,6 +95,8 @@ export type UploadToCloudinaryResult = {
   mimeType: string;
 };
 
+export { ContentBlockedError };
+
 /**
  * Validates magic bytes, uploads to Cloudinary, returns delivery URL + publicId for deletion.
  */
@@ -128,6 +135,14 @@ export async function uploadToCloudinary(input: {
     throw new Error(
       `Unsupported or unverified file type${detected?.mime ? `: ${detected.mime}` : ''}`
     );
+  }
+
+  // Groq Llama Guard — block unsafe images before they hit Cloudinary.
+  if (effectiveMime.startsWith('image/')) {
+    await assertImageAllowed({
+      buffer: input.buffer,
+      mimeType: effectiveMime,
+    });
   }
 
   const resourceType = classifyMime(effectiveMime);
